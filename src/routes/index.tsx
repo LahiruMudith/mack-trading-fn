@@ -9,6 +9,13 @@ export default function Router(){
     const Contact = lazy(() => import("../pages/contact.tsx"))
     const Gallery = lazy(() => import("../pages/gallery.tsx"))
     const Shop = lazy(() => import("../pages/shop.tsx"))
+    const Cart = lazy(() => import("../pages/cart.tsx"))
+    const Profile = lazy(() => import("../pages/profile.tsx"))
+    const Login = lazy(() => import("../pages/login.tsx"))
+    const Checkout = lazy(() => import("../pages/checkout.tsx"))
+    const Account = lazy(() => import("../pages/account.tsx"))
+    const Orders = lazy(() => import("../pages/orders.tsx"))
+    const Address = lazy(() => import("../pages/address.tsx"))
 
     return(
         <>
@@ -21,6 +28,13 @@ export default function Router(){
                             <Route path="/contact" element={<Contact/>}/>
                             <Route path="/gallery" element={<Gallery/>}/>
                             <Route path="/shop" element={<Shop/>}/>
+                            <Route path="/cart" element={<Cart/>}/>
+                            <Route path="/login" element={<Login/>}/>
+                            <Route path="/profile" element={<Profile/>}/>
+                            <Route path="/checkout" element={<Checkout/>}/>
+                            <Route path="/account" element={<Account/>}/>
+                            <Route path="/orders" element={<Orders/>}/>
+                            <Route path="/address" element={<Address/>}/>
                         </Route>
                     </Routes>
                 </Suspense>
