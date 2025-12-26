@@ -275,9 +275,9 @@ export default function Address() {
                         Add New Address
                     </Button>
 
-                    <span style={{ color: mutedText }} className="text-sm">
-            You can add, edit or remove saved addresses. The default address is shown on each card.
-          </span>
+          {/*          <span style={{ color: mutedText }} className="text-sm">*/}
+          {/*  You can add, edit or remove saved addresses. The default address is shown on each card.*/}
+          {/*</span>*/}
                 </div>
 
                 {/* Addresses Grid */}

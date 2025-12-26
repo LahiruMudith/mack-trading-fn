@@ -76,14 +76,7 @@ export default function Header() {
                                 {item.label}
                             </Link>
                         ))}
-                        <div className="px-3 py-2 text-sm font-medium text-foreground">Shop</div>
-                            <Link
-                                to={"/shop"}
-                                className="block pl-6 px-3 py-2 text-sm text-foreground hover:text-accent hover:bg-muted rounded-md transition-colors"
-                                onClick={() => setIsOpen(false)}
-                            >
-                                Shop
-                            </Link>
+
                         <Link
                             to="/cart"
                             className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-foreground hover:text-accent hover:bg-muted rounded-md transition-colors"

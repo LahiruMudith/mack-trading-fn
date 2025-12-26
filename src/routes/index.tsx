@@ -16,6 +16,7 @@ export default function Router(){
     const Account = lazy(() => import("../pages/account.tsx"))
     const Orders = lazy(() => import("../pages/orders.tsx"))
     const Address = lazy(() => import("../pages/address.tsx"))
+    const Product = lazy(() => import("../pages/product.tsx"))
 
     return(
         <>
@@ -35,6 +36,7 @@ export default function Router(){
                             <Route path="/account" element={<Account/>}/>
                             <Route path="/orders" element={<Orders/>}/>
                             <Route path="/address" element={<Address/>}/>
+                            <Route path="/product/:productId" element={<Product/>}/>
                         </Route>
                     </Routes>
                 </Suspense>

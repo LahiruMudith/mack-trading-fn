@@ -90,3 +90,11 @@ export const products: Product[] = [
         inStock: true,
     },
 ]
+
+export function getProductsByCategory(category: "machines" | "parts" | "accessories") {
+    return products.filter((p) => p.category === category)
+}
+
+export function getProductById(id:any) {
+    return products.find((p) => p.id === id)
+}
