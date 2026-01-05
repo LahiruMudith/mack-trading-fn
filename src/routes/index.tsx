@@ -12,6 +12,7 @@ export default function Router(){
     const Cart = lazy(() => import("../pages/cart.tsx"))
     const Profile = lazy(() => import("../pages/profile.tsx"))
     const Login = lazy(() => import("../pages/login.tsx"))
+    const SignUp = lazy(() => import("../pages/signUp.tsx"))
     const Checkout = lazy(() => import("../pages/checkout.tsx"))
     const Account = lazy(() => import("../pages/account.tsx"))
     const Orders = lazy(() => import("../pages/orders.tsx"))
@@ -31,6 +32,7 @@ export default function Router(){
                             <Route path="/shop" element={<Shop/>}/>
                             <Route path="/cart" element={<Cart/>}/>
                             <Route path="/login" element={<Login/>}/>
+                            <Route path="/sign-up" element={<SignUp/>}/>
                             <Route path="/profile" element={<Profile/>}/>
                             <Route path="/checkout" element={<Checkout/>}/>
                             <Route path="/account" element={<Account/>}/>

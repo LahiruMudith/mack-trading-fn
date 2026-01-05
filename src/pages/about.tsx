@@ -41,7 +41,7 @@ function About() {
                                 </div>
                             </div>
                             <div className="bg-muted rounded-lg h-96">
-                                <img src="https://res.cloudinary.com/dkidles6w/image/upload/v1761119271/4_gpl6l7.jpg" alt="shop image" className={"w-full h-full object-cover"}/>
+                                <img src="https://res.cloudinary.com/dkidles6w/image/upload/v1767613460/WhatsApp_Image_2026-01-05_at_12.33.49_PM_hmerky.jpg" alt="shop image" className={"w-full h-full object-cover rounded-lg"}/>
                             </div>
                         </div>
                     </div>

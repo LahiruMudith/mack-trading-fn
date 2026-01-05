@@ -1,13 +1,12 @@
-"use client"
-
 import React, { useState } from "react"
-import { Link } from "react-router-dom"
+import {Link, Navigate} from "react-router-dom"
 import { Card } from "../component/ui/card.tsx"
 import { Button } from "../component/ui/button.tsx"
 import { Edit2, LogOut, User, MapPin, List } from "lucide-react"
 import { Toaster, toast } from "react-hot-toast"
-import SignupForm from "../component/ui/signUpForm.tsx"
-import LoginForm from "../component/ui/loginFrom.tsx"
+import {useDispatch, useSelector} from "react-redux";
+import {logout} from "../lib/authSlice.ts";
+import { type RootState } from '../store.ts';
 
 interface MenuItem {
     href: string
@@ -22,8 +21,10 @@ export default function AccountPage() {
     const neutralBorder = "#E6E9EE"
     const mutedText = "#6b7280"
 
-    const [isLoggedIn, setIsLoggedIn] = useState(true)
-    const [showSignup, setShowSignup] = useState(false)
+    const dispatch = useDispatch()
+
+    const isLoggedIn = useSelector((state:RootState) => state.auth.isLogin)
+    console.log(isLoggedIn)
     const [isEditing, setIsEditing] = useState(false)
     const [userData, setUserData] = useState({
         firstName: "John",
@@ -80,8 +81,7 @@ export default function AccountPage() {
 
                     <button
                         onClick={() => {
-                            setIsLoggedIn(false)
-                            setShowSignup(false)
+                            dispatch(logout())
                             toast.dismiss(t.id)
                         }}
                         style={{
@@ -93,35 +93,20 @@ export default function AccountPage() {
                             cursor: "pointer",
                         }}
                     >
-                        Delete
+                        Yes
                     </button>
                 </div>
             </div>
         ), {
-            // Keep the toast visible until user chooses an action
             position: "top-center",
             duration: Infinity,
         })
     }
 
     if (!isLoggedIn) {
-        return (
-            <main className="min-h-screen bg-gradient-to-br from-background to-muted py-12">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col items-center justify-center min-h-[70vh]">
-
-                        {showSignup ? (
-                            <SignupForm onSignupSuccess={() => setIsLoggedIn(true)} onSwitchToLogin={() => setShowSignup(false)} />
-                        ) : (
-                            <LoginForm onLoginSuccess={() => setIsLoggedIn(true)} onSwitchToSignup={() => setShowSignup(true)} />
-                        )}
-                    </div>
-                </div>
-            </main>
-        )
+        return <Navigate to="/login" replace />
     }
 
-    // Demo data / local state (replace with your real data/props)
     const menuItems: MenuItem[] = [
         { href: "/account", label: "Profile", icon: User },
         { href: "/orders", label: "Orders", icon: List },
@@ -130,7 +115,6 @@ export default function AccountPage() {
 
     return (
         <main className="min-h-screen bg-background py-12">
-            {/* Toaster - put once in app root ideally. It's safe to include here while testing. */}
             <Toaster position="top-right" />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
