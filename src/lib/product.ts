@@ -1,7 +1,6 @@
 export type Product = {
     id: string
     name: string
-    slug?: string
     category: "machines" | "parts" | "accessories" | string
     price: number
     rating: number
@@ -19,7 +18,6 @@ export type Product = {
 export const products: Product[] = [
     {
         id: "m1",
-        slug: "janome-5000",
         name: "Janome 5000 Sewing Machine",
         category: "machines",
         price: 799.0,
@@ -32,7 +30,6 @@ export const products: Product[] = [
     },
     {
         id: "m2",
-        slug: "brother-xplore",
         name: "Brother Xplore Industrial Machine",
         category: "machines",
         price: 1599.0,
@@ -45,7 +42,6 @@ export const products: Product[] = [
     },
     {
         id: "p1",
-        slug: "needle-pack-100",
         name: "Universal Needle Pack (100 pcs)",
         category: "parts",
         price: 12.5,
@@ -57,7 +53,6 @@ export const products: Product[] = [
     },
     {
         id: "p2",
-        slug: "bobbin-metal",
         name: "Metal Bobbin (5-pack)",
         category: "parts",
         price: 7.99,
@@ -68,7 +63,6 @@ export const products: Product[] = [
     },
     {
         id: "a1",
-        slug: "carrying-case-xl",
         name: "Carrying Case XL",
         category: "accessories",
         price: 49.0,
@@ -80,7 +74,6 @@ export const products: Product[] = [
     },
     {
         id: "a2",
-        slug: "presser-feet-set",
         name: "Presser Feet Set (12 pcs)",
         category: "accessories",
         price: 29.0,
