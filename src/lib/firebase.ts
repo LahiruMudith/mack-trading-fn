@@ -2,12 +2,12 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAjNblfiyLIPt54hPXNa1VnlgHfgwKpe9g",
-    authDomain: "login-auth-a1a16.firebaseapp.com",
-    projectId: "login-auth-a1a16",
-    storageBucket: "login-auth-a1a16.firebasestorage.app",
-    messagingSenderId: "857329968263",
-    appId: "1:857329968263:web:e3b5022c93585f08624422"
+    apiKey: import.meta.env.API_KEY,
+    authDomain: import.meta.env.AUTH_DOMAIN,
+    projectId: import.meta.env.PROJECT_ID,
+    storageBucket: import.meta.env.STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.MESSAGING_SENDER_ID,
+    appId: import.meta.env.APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
