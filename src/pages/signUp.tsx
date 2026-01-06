@@ -1,16 +1,13 @@
-"use client"
-
 import type React from "react"
 import { useState } from "react"
 import { Eye, EyeOff, Check } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
-import { useDispatch } from "react-redux"
 import { Card } from "../component/ui/card"
 import { Button } from "../component/ui/button"
-import { login } from "../lib/authSlice"
+import {register} from "../services/user.ts";
+import {toast, Toaster} from "react-hot-toast";
 
 export default function SignupPage() {
-    const dispatch = useDispatch()
     const navigate = useNavigate()
 
     const [showPassword, setShowPassword] = useState(false)
@@ -51,8 +48,8 @@ export default function SignupPage() {
         }
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
 
         if (
             formData.name &&
@@ -60,9 +57,35 @@ export default function SignupPage() {
             formData.password === formData.confirmPassword &&
             formData.agreeToTerms
         ) {
-            // Register logic here...
-            dispatch(login(formData.email))
-            navigate("/account")
+            const registerPromise = async () => {
+                const response: any = await register(formData);
+
+                if (response.code !== 201) {
+                    throw new Error("Registration failed");
+                }
+
+                return response;
+            };
+
+            toast.promise(
+                registerPromise(),
+                {
+                    loading: 'Creating account...',
+                    success: () => {
+                        setTimeout(() => {
+                            navigate("/login");
+                        }, 1500);
+                        return "Account created successfully!";
+                    },
+                    error: (err) => {
+                        console.log(err)
+                        return "Registration failed. Please try again.";
+                    },
+                }
+            );
+
+        } else {
+            toast.error("Please fix form errors");
         }
     }
 
@@ -83,7 +106,7 @@ export default function SignupPage() {
                         <label className="block text-sm font-semibold mb-2">Full Name</label>
                         <input
                             type="text"
-                            name="name" // name attribute එක 'name' විය යුතුයි
+                            name="name"
                             placeholder="John Doe"
                             value={formData.name}
                             onChange={handleChange}
@@ -245,16 +268,16 @@ export default function SignupPage() {
                     >
                         Sign up with Google
                     </button>
-                    <button
-                        className="w-full px-4 py-2 rounded-lg transition-colors font-medium hover:bg-gray-50"
-                        style={{
-                            border: `1px solid ${brandPrimary}`,
-                            color: brandPrimary,
-                            background: "transparent",
-                        }}
-                    >
-                        Sign up with Facebook
-                    </button>
+                    {/*<button*/}
+                    {/*    className="w-full px-4 py-2 rounded-lg transition-colors font-medium hover:bg-gray-50"*/}
+                    {/*    style={{*/}
+                    {/*        border: `1px solid ${brandPrimary}`,*/}
+                    {/*        color: brandPrimary,*/}
+                    {/*        background: "transparent",*/}
+                    {/*    }}*/}
+                    {/*>*/}
+                    {/*    Sign up with Facebook*/}
+                    {/*</button>*/}
                 </div>
 
                 <p className="text-center text-sm text-muted-foreground mt-6">
@@ -268,6 +291,7 @@ export default function SignupPage() {
                     </Link>
                 </p>
             </Card>
+            <Toaster position="top-center" reverseOrder={false} />
         </main>
     )
 }
