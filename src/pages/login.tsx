@@ -6,6 +6,10 @@ import { useDispatch } from "react-redux"
 import { Card } from "../component/ui/card"
 import { Button } from "../component/ui/button"
 import { login } from "../lib/authSlice"
+import {toast, Toaster} from "react-hot-toast";
+import {signInWithPopup} from "firebase/auth";
+import {auth, googleProvider} from "../lib/firebase.ts";
+import {google_login,userLogin} from "../services/user.ts";
 
 export default function LoginPage() {
     const dispatch = useDispatch()
@@ -26,15 +30,79 @@ export default function LoginPage() {
         setFormData((prev) => ({ ...prev, [name]: value }))
     }
 
+    const handleGoogleLogin = async () => {
+        try {
+            const result = await signInWithPopup(auth, googleProvider);
+            const firebaseUser = result.user;
+
+            if (!firebaseUser.email) {
+                toast.error("No email found provided by Google");
+                return;
+            }
+
+            const userData = {
+                email: firebaseUser.email,
+                name: firebaseUser.displayName || "Unknown User",
+                password:"password",
+            };
+
+            const toastId = toast.loading("Connecting to server...");
+
+            const response = await google_login(userData);
+
+            if (response) {
+                const successMessage = response.isNewUser
+                    ? "Account created! Password sent to email."
+                    : "Login Successful!";
+
+                toast.success(successMessage, { id: toastId });
+
+                dispatch(login(response.email));
+                setTimeout(() => {
+                    navigate("/account");
+                }, 1500);
+            }
+
+        } catch (error: any) {
+            console.error("Login Error:", error);
+            const errorMsg = error.response?.data?.message || "Google Login Failed";
+            toast.error(errorMsg);
+        }
+    }
+
     const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
+        e.preventDefault();
 
         if (formData.email && formData.password) {
-            dispatch(login(formData.email))
+            const loginPromise = async () => {
+                const response: any = await userLogin(formData.email, formData.password);
 
-            navigate("/account")
+                if (response.code !== 200) {
+                    throw new Error("Invalid Credentials");
+                }
+
+                dispatch(login(formData.email));
+                return response;
+            };
+
+            toast.promise(
+                loginPromise(),
+                {
+                    loading: 'Logging in...',
+                    success: () => {
+                        setTimeout(() => {
+                            navigate("/account");
+                        }, 1500);
+                        return "Login Successful!";
+                    },
+                    error: (err) => {
+                        console.log(err);
+                        return "Login failed. Please check email & password.";
+                    },
+                }
+            );
         } else {
-            alert("Please fill in all fields")
+            toast.error("Please fill in all fields");
         }
     }
 
@@ -129,18 +197,19 @@ export default function LoginPage() {
                             borderColor: brandPrimary,
                             color: brandPrimary,
                         }}
+                        onClick={handleGoogleLogin}
                     >
                         Google
                     </button>
-                    <button
-                        className="w-full px-4 py-2 border rounded-lg transition-colors font-medium hover:bg-gray-50 flex justify-center items-center"
-                        style={{
-                            borderColor: brandPrimary,
-                            color: brandPrimary,
-                        }}
-                    >
-                        Facebook
-                    </button>
+                    {/*<button*/}
+                    {/*    className="w-full px-4 py-2 border rounded-lg transition-colors font-medium hover:bg-gray-50 flex justify-center items-center"*/}
+                    {/*    style={{*/}
+                    {/*        borderColor: brandPrimary,*/}
+                    {/*        color: brandPrimary,*/}
+                    {/*    }}*/}
+                    {/*>*/}
+                    {/*    Facebook*/}
+                    {/*</button>*/}
                 </div>
 
                 <p className="text-center text-sm text-muted-foreground mt-8">
@@ -154,6 +223,10 @@ export default function LoginPage() {
                     </Link>
                 </p>
             </Card>
+            <Toaster
+                position="top-center"
+                reverseOrder={false}
+            />
         </main>
     )
 }

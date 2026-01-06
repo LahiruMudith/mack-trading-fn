@@ -4,10 +4,15 @@ import { Eye, EyeOff, Check } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { Card } from "../component/ui/card"
 import { Button } from "../component/ui/button"
-import {register} from "../services/user.ts";
+import {google_login, register} from "../services/user.ts";
 import {toast, Toaster} from "react-hot-toast";
+import { signInWithPopup } from "firebase/auth"
+import { auth, googleProvider } from "../lib/firebase.ts"
+import {useDispatch} from "react-redux";
+import {login} from "../lib/authSlice.ts";
 
 export default function SignupPage() {
+    const dispatch = useDispatch()
     const navigate = useNavigate()
 
     const [showPassword, setShowPassword] = useState(false)
@@ -45,6 +50,46 @@ export default function SignupPage() {
             if (/[0-9]/.test(value)) strength++
             if (/[^A-Za-z0-9]/.test(value)) strength++
             setPasswordStrength(strength)
+        }
+    }
+
+    const handleGoogleLogin = async () => {
+        try {
+            const result = await signInWithPopup(auth, googleProvider);
+            const firebaseUser = result.user;
+
+            if (!firebaseUser.email) {
+                toast.error("No email found provided by Google");
+                return;
+            }
+
+            const userData = {
+                email: firebaseUser.email,
+                name: firebaseUser.displayName || "Unknown User",
+                password:"password",
+            };
+
+            const toastId = toast.loading("Connecting to server...");
+
+            const response = await google_login(userData);
+
+            if (response) {
+                const successMessage = response.isNewUser
+                    ? "Account created! Password sent to email."
+                    : "Login Successful!";
+
+                toast.success(successMessage, { id: toastId });
+
+                dispatch(login(response.email));
+                setTimeout(() => {
+                    navigate("/account");
+                }, 1500);
+            }
+
+        } catch (error: any) {
+            console.error("Login Error:", error);
+            const errorMsg = error.response?.data?.message || "Google Login Failed";
+            toast.error(errorMsg);
         }
     }
 
@@ -265,6 +310,7 @@ export default function SignupPage() {
                             color: brandPrimary,
                             background: "transparent",
                         }}
+                        onClick={handleGoogleLogin}
                     >
                         Sign up with Google
                     </button>
