@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: "http://localhost:5000/mack-trading/api/v1"
+    baseURL: "http://localhost:5000/mack-trading/api/v1",
+    withCredentials: true
 })
 
 const PUBLIC_ENDPOINTS = ["/user/register", "/user/login"] //    /user/refreshToken
