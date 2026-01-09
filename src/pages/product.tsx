@@ -1,30 +1,136 @@
-import { useState } from "react"
-import { Card } from "../component/ui/card.tsx"
-import { useParams, useNavigate } from "react-router-dom" // Added useNavigate
+import { useState, useEffect } from "react"
+import { useParams, useNavigate } from "react-router-dom"
 import { Button } from "../component/ui/button.tsx"
-import { Star, Truck, Shield, RotateCcw, ArrowLeft } from "lucide-react" // Added ArrowLeft
-import { products, getProductById, type Product } from "../lib/product.ts"
+import { Star, Truck, Shield, RotateCcw, ArrowLeft, Loader2 } from "lucide-react"
 import { Link } from "react-router-dom"
+import { getItemById } from "../services/item.ts"
+import toast, { Toaster } from 'react-hot-toast'; // Import Toast
 
-// Defined constants for reference, used directly in classNames below
-// const PRIMARY = "#061653"; // Dark Blue
-// const SECONDARY = "#780000"; // Dark Red
+// --- Redux & Service Imports ---
+import { useDispatch, useSelector } from "react-redux";
+import { addToCart } from "../lib/cartSlice.ts"; // Ensure this path matches your file
+import { addItemToCartAPI } from "../services/cart.ts"; // Ensure this path matches your file
+import type {RootState} from "../store.ts"; // Import your RootState type
+// Import your RootState type
+
+interface ProductType {
+    id: string;
+    name: string;
+    description: string;
+    image: string;
+    price: number;
+    category: string;
+    specs: Record<string, any>;
+    inStock: boolean;
+    rating: number;
+    reviews: number;
+}
 
 export default function Product() {
     const { productId } = useParams()
-    const navigate = useNavigate() // Hook for back navigation
-    const product: Product | any = getProductById(productId)
+    const navigate = useNavigate()
+    const dispatch = useDispatch();
+
+    // Redux: Check if user is logged in
+    // Adjust 'state.auth.isLogin' based on your actual Redux store structure
+    const isLoggedIn = useSelector((state: RootState) => state.auth.isLogin)
+
+    // State
+    const [product, setProduct] = useState<ProductType | null>(null)
+    const [loading, setLoading] = useState(true)
     const [quantity, setQuantity] = useState(1)
-    // const [isWishlisted, setIsWishlisted] = useState(false)
+    const [isAdding, setIsAdding] = useState(false) // State for button loading
+
+    // Fetch Product Data
+    useEffect(() => {
+        const fetchProduct = async () => {
+            if (!productId) return;
+
+            try {
+                setLoading(true);
+                const response = await getItemById(productId);
+                const data = response.data || response;
+
+                const transformedProduct: ProductType = {
+                    id: data._id,
+                    name: data.name,
+                    description: data.description,
+                    image: data.image_url,
+                    price: data.price,
+                    category: data.category,
+                    specs: data.key_features ?
+                        data.key_features.reduce((acc: any, feature: string, index: number) => {
+                            acc[`Feature ${index + 1}`] = feature;
+                            return acc;
+                        }, {}) : {},
+                    inStock: data.stock > 0,
+                    rating: 4.8,
+                    reviews: 124
+                };
+
+                setProduct(transformedProduct);
+            } catch (error) {
+                console.error("Failed to load product", error);
+                toast.error("Could not load product details");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProduct();
+    }, [productId]);
+
+    // --- HANDLE ADD TO CART ---
+    const handleAddToCart = async () => {
+        if (!product) return;
+
+        setIsAdding(true);
+
+        // 1. Update Redux (Immediate UI feedback)
+        dispatch(addToCart({
+            productId: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.image,
+            quantity: quantity,
+            stock: product.inStock ? 100 : 0
+        }));
+
+        // 2. Sync with Backend (If Logged In)
+        console.log(isLoggedIn)
+        if (isLoggedIn) {
+            try {
+                await addItemToCartAPI(product.id, quantity, product.image);
+                toast.success("Added to cart!");
+            } catch (error) {
+                console.error("Cart sync error:", error);
+                // We keep the Redux state to not disrupt the user,
+                // but warn them that it wasn't saved to the server.
+                toast.success("Added to cart (Local only)");
+            }
+        } else {
+            // Guest User
+            toast.success("Added to cart");
+        }
+
+        setIsAdding(false);
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="animate-spin text-[#061653]" size={48} />
+            </div>
+        )
+    }
 
     if (!product) {
         return <div className="min-h-screen flex items-center justify-center">Product not found</div>
     }
 
-    const relatedProducts = products.filter((p) => p.category === "machines" && p.id !== product.id).slice(0, 4)
-
     return (
         <main className="min-h-screen bg-background py-12">
+            <Toaster position="top-center" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
                 {/* Back Button & Breadcrumb Row */}
@@ -42,11 +148,7 @@ export default function Product() {
                             Shop
                         </Link>{" "}
                         /
-                        <Link to="/shop/machines" className="hover:text-[#061653]">
-                            {" "}
-                            Machines
-                        </Link>{" "}
-                        /<span className="text-[#061653] font-medium ml-1">{product.name}</span>
+                        <span className="text-[#061653] font-medium ml-1">{product.name}</span>
                     </div>
                 </div>
 
@@ -70,7 +172,6 @@ export default function Product() {
                                     <Star
                                         key={i}
                                         size={20}
-                                        // Keeping yellow for stars as it's standard, or you could use SECONDARY
                                         className={i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}
                                     />
                                 ))}
@@ -80,22 +181,21 @@ export default function Product() {
                         </div>
 
                         {/* Price */}
-                        <p className="text-5xl font-bold text-[#061653] mb-6">${product.price.toFixed(2)}</p>
+                        <p className="text-5xl font-bold text-[#061653] mb-6">LKR {product.price.toFixed(2)}</p>
 
                         {/* Description */}
                         <p className="text-lg text-muted-foreground mb-6">{product.description}</p>
 
                         {/* Specifications */}
-                        {product.specs && (
+                        {product.specs && Object.keys(product.specs).length > 0 && (
                             <div className="mb-8">
                                 <h3 className="font-semibold text-lg mb-3 text-[#061653]">Key Features</h3>
                                 <ul className="space-y-2">
                                     {Object.entries(product.specs).map(([key, value], index) => (
                                         <li key={index} className="flex items-center gap-2">
-                                            {/* Used SECONDARY (Red) for the checkmark to make it pop */}
                                             <span className="text-[#780000] font-bold">✓</span>
                                             <span className="capitalize">
-                                                <strong className="text-gray-700">{key.replace(/_/g, " ")}:</strong> {String(value)}
+                                                 {String(value)}
                                             </span>
                                         </li>
                                     ))}
@@ -128,75 +228,40 @@ export default function Product() {
                                 </button>
                             </div>
 
-                            {/* Primary Action Button - Uses PRIMARY Blue */}
+                            {/* UPDATED BUTTON WITH LOGIC */}
                             <Button
-                                className="flex-1 bg-[#061653] text-white hover:bg-[#061653]/90"
-                                disabled={!product.inStock}
+                                onClick={handleAddToCart}
+                                className="flex-1 bg-[#061653] text-white hover:bg-[#061653]/90 transition-all active:scale-95"
+                                disabled={!product.inStock || isAdding}
                             >
-                                Add to Cart
+                                {isAdding ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Adding...
+                                    </>
+                                ) : (
+                                    "Add to Cart"
+                                )}
                             </Button>
-
-                            {/*<button*/}
-                            {/*    onClick={() => setIsWishlisted(!isWishlisted)}*/}
-                            {/*    className="px-6 py-2 border border-border rounded-lg hover:bg-gray-50 transition-colors"*/}
-                            {/*>*/}
-                            {/*    <Heart*/}
-                            {/*        size={20}*/}
-                            {/*        // Uses SECONDARY Red when active*/}
-                            {/*        className={isWishlisted ? "fill-[#780000] text-[#780000]" : "text-gray-400"}*/}
-                            {/*    />*/}
-                            {/*</button>*/}
                         </div>
 
                         {/* Trust Badges */}
                         <div className="grid grid-cols-3 gap-4 pt-8 border-t border-border">
                             <div className="text-center group">
                                 <Truck className="w-6 h-6 mx-auto mb-2 text-[#061653] group-hover:text-[#780000] transition-colors" />
-                                <p className="text-sm font-semibold text-[#061653]">Free Shipping</p>
-                                <p className="text-xs text-muted-foreground">On orders over $100</p>
+                                <p className="text-sm font-semibold text-[#061653]">Islandwide Delivery</p>
                             </div>
                             <div className="text-center group">
                                 <Shield className="w-6 h-6 mx-auto mb-2 text-[#061653] group-hover:text-[#780000] transition-colors" />
                                 <p className="text-sm font-semibold text-[#061653]">Warranty</p>
-                                <p className="text-xs text-muted-foreground">2 years coverage</p>
                             </div>
                             <div className="text-center group">
                                 <RotateCcw className="w-6 h-6 mx-auto mb-2 text-[#061653] group-hover:text-[#780000] transition-colors" />
                                 <p className="text-sm font-semibold text-[#061653]">Easy Returns</p>
-                                <p className="text-xs text-muted-foreground">30-day policy</p>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                {/* Related Products */}
-                {relatedProducts.length > 0 && (
-                    <div>
-                        <h2 className="text-3xl font-bold mb-8 text-[#061653]">Related Products</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {relatedProducts.map((p) => (
-                                <Card key={p.id} className="hover:shadow-lg transition-shadow overflow-hidden group border-gray-200">
-                                    <div className="relative overflow-hidden bg-muted h-48">
-                                        <img
-                                            src={p.image || "/placeholder.svg"}
-                                            alt={p.name}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                                        />
-                                    </div>
-                                    <div className="p-4">
-                                        <h3 className="font-semibold mb-2 line-clamp-2 text-[#061653]">{p.name}</h3>
-                                        <p className="text-xl font-bold text-[#061653] mb-4">${p.price.toFixed(2)}</p>
-                                        <Link to={`/shop/machines/${p.id}`}>
-                                            <Button className="w-full bg-white border border-[#061653] text-[#061653] hover:bg-[#061653] hover:text-white transition-colors">
-                                                View Details
-                                            </Button>
-                                        </Link>
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
-                    </div>
-                )}
             </div>
         </main>
     )
