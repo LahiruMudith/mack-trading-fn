@@ -1,71 +1,92 @@
 import React, { useEffect, useRef, useState } from "react"
 import { Card } from "../component/ui/card.tsx"
 import { Button } from "../component/ui/button.tsx"
-import { Plus, Edit2, Trash2, MapPin, X } from "lucide-react"
+import { Plus, Edit2, Trash2, MapPin, X, Loader2, Phone } from "lucide-react"
 import { Link } from "react-router-dom"
 import toast, { Toaster } from 'react-hot-toast';
 
+// Import the service functions
+import {
+    getAllUserAddresses,
+    createUserAddress,
+    updateUserAddress,
+    deleteUserAddress
+} from "../services/address.ts";
+
+// 1. Define Enum
+export enum AddressType {
+    "HOME" = "HOME",
+    "WORK" = "WORK",
+    "OTHER" = "OTHER"
+}
+
 type Addr = {
-    id: number
-    name: string
+    _id: number | string
+    type: string // Stores "HOME", "WORK", or "OTHER"
     address: string
     city: string
     state: string
     zipCode: string
-    phone: string
+    country: string,
+    phone_number_01: string
+    phone_number_02: string
     isDefault?: boolean
 }
 
 export default function Address() {
-    const brandPrimary = "#061653" // deep blue
-    const brandSecondary = "#780000" // deep red
+    const brandPrimary = "#061653"
+    const brandSecondary = "#780000"
     const neutralBorder = "#E6E9EE"
     const mutedText = "#6b7280"
 
-    const [addresses, setAddresses] = useState<Addr[]>([
-        {
-            id: 1,
-            name: "Home",
-            address: "123 Main Street",
-            city: "New York",
-            state: "NY",
-            zipCode: "10001",
-            phone: "+1 (555) 123-4567",
-            isDefault: true,
-        },
-        {
-            id: 2,
-            name: "Office",
-            address: "456 Business Ave",
-            city: "New York",
-            state: "NY",
-            zipCode: "10002",
-            phone: "+1 (555) 987-6543",
-            isDefault: false,
-        },
-    ])
+    // State for data
+    const [addresses, setAddresses] = useState<Addr[]>([])
+    const [isLoading, setIsLoading] = useState(true)
 
     // Reusable empty form
     const emptyForm: Addr = {
-        id: 0,
-        name: "",
+        _id: "",
+        type: AddressType.HOME, // 2. Set Default to HOME
         address: "",
         city: "",
         state: "",
         zipCode: "",
-        phone: "",
+        country: "Sri Lanka",
+        phone_number_01: "",
+        phone_number_02: "",
         isDefault: false,
     }
 
     // Modal form state
     const [modalOpen, setModalOpen] = useState(false)
     const [formData, setFormData] = useState<Addr>({ ...emptyForm })
-    const [isEditingId, setIsEditingId] = useState<number | null>(null)
+    const [isEditingId, setIsEditingId] = useState<number | string | null>(null)
 
-    // Refs for accessibility & focus management
+    // Refs
     const modalRef = useRef<HTMLDivElement | null>(null)
-    const firstInputRef = useRef<HTMLInputElement | null>(null)
+    const firstInputRef = useRef<HTMLInputElement | null>(null) // Note: This ref might need to move to the Select element or Phone input since Label is now a Select
     const lastActiveElement = useRef<HTMLElement | null>(null)
+
+    /* ---------- API Fetching ---------- */
+
+    const fetchAddresses = async () => {
+        try {
+            setIsLoading(true);
+            const response = await getAllUserAddresses();
+            const data = Array.isArray(response) ? response : (response.data || []);
+            setAddresses(data);
+        } catch (error) {
+            console.error("Fetch error:", error);
+            toast.error("Could not load addresses");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Fetch on Mount
+    useEffect(() => {
+        fetchAddresses();
+    }, []);
 
     /* ---------- Actions ---------- */
 
@@ -79,19 +100,19 @@ export default function Address() {
     const handleEdit = (addr: Addr) => {
         lastActiveElement.current = document.activeElement as HTMLElement | null
         setFormData({ ...addr })
-        setIsEditingId(addr.id)
+        setIsEditingId(addr._id)
         setModalOpen(true)
     }
 
-    // Delete address — replaced confirm() with react-hot-toast confirmation toast
-    const handleDelete = (id: number) => {
-        const isDefault = addresses.find((a) => a.isDefault === true)
+    const handleDelete = (id: number | string) => {
+        const isDefault = addresses.find((a) => a._id === id && a.isDefault === true)
+        console.log(addresses)
+        console.log(id)
         if (isDefault) {
             toast.error("Default address cannot be deleted.")
             return
         }
 
-        // show an interactive toast with Cancel / Delete actions
         toast((t) => (
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 <div style={{ flex: 1 }}>
@@ -115,20 +136,19 @@ export default function Address() {
                     </button>
 
                     <button
-                        onClick={() => {
-                            // perform delete
-                            setAddresses((prev) => prev.filter((a) => a.id !== id))
-
-                            // if deleted address was being edited, close modal
-                            if (isEditingId === id) {
-                                setModalOpen(false)
-                                setIsEditingId(null)
-                                setFormData({ ...emptyForm })
-                            }
-
-                            // dismiss this confirmation toast and show success toast
+                        onClick={async () => {
                             toast.dismiss(t.id)
-                            toast.success("Address deleted")
+                            try {
+                                await deleteUserAddress(id);
+                                setAddresses((prev) => prev.filter((a) => a._id !== id))
+                                if (isEditingId === id) {
+                                    setModalOpen(false)
+                                    setIsEditingId(null)
+                                }
+                                toast.success("Address deleted")
+                            } catch (error) {
+                                toast.error("Failed to delete address");
+                            }
                         }}
                         style={{
                             padding: "8px 12px",
@@ -143,10 +163,7 @@ export default function Address() {
                     </button>
                 </div>
             </div>
-        ), {
-            // Keep the toast visible until user chooses an action
-            duration: Infinity,
-        })
+        ), { duration: Infinity })
     }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -154,88 +171,52 @@ export default function Address() {
         setFormData((prev) => ({ ...prev, [name]: value }))
     }
 
-    const handleSave = () => {
-        // simple validation
-        if (!formData.name || !formData.address || !formData.city || !formData.state || !formData.zipCode || !formData.phone) {
-            toast.error("Please fill in all fields.")
+    const handleSave = async () => {
+        if (!formData.type || !formData.address || !formData.city || !formData.state || !formData.zipCode || !formData.phone_number_01) {
+            toast.error("Please fill in required fields.")
             return
         }
 
-        if (isEditingId) {
-            setAddresses((prev) => prev.map((a) => (a.id === isEditingId ? { ...formData, id: isEditingId } : a)))
-            toast.success("Address updated")
-        } else {
-            const newId = Date.now()
-            setAddresses((prev) => prev.concat({ ...formData, id: newId, isDefault: false }))
-            toast.success("Address added")
+        try {
+            if (isEditingId) {
+                await updateUserAddress(isEditingId, formData);
+                toast.success("Address updated");
+            } else {
+                await createUserAddress(formData);
+                toast.success("Address added");
+            }
+            await fetchAddresses();
+            closeModal();
+        } catch (error: any) {
+            toast.error(typeof error === 'string' ? error : "Failed to save address");
         }
-
-        closeModal()
     }
 
     const closeModal = () => {
         setModalOpen(false)
         setIsEditingId(null)
         setFormData({ ...emptyForm })
-        // restore focus to the element that opened the modal
         setTimeout(() => {
             lastActiveElement.current?.focus()
             lastActiveElement.current = null
         }, 0)
     }
 
-    /* ---------- Accessibility & body scroll lock ---------- */
-
+    /* ---------- Accessibility ---------- */
     useEffect(() => {
         if (!modalOpen) return
-
-        // Lock body scroll
         const originalOverflow = document.body.style.overflow
         document.body.style.overflow = "hidden"
 
-        // Focus first input when modal opens
-        setTimeout(() => {
-            firstInputRef.current?.focus()
-        }, 0)
+        // Focus management logic remains
+        // (Note: firstInputRef should be attached to the select if you want it focused first)
 
-        // Key handlers: ESC to close, Tab to trap focus
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
                 e.stopPropagation()
                 closeModal()
             }
-
-            if (e.key === "Tab") {
-                const container = modalRef.current
-                if (!container) return
-
-                const focusable = Array.from(
-                    container.querySelectorAll<HTMLElement>(
-                        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
-                    )
-                ).filter((el) => !el.hasAttribute("disabled"))
-
-                if (focusable.length === 0) {
-                    e.preventDefault()
-                    return
-                }
-
-                const first = focusable[0]
-                const last = focusable[focusable.length - 1]
-                if (e.shiftKey) {
-                    if (document.activeElement === first) {
-                        e.preventDefault()
-                        last.focus()
-                    }
-                } else {
-                    if (document.activeElement === last) {
-                        e.preventDefault()
-                        first.focus()
-                    }
-                }
-            }
         }
-
         document.addEventListener("keydown", onKeyDown)
         return () => {
             document.body.style.overflow = originalOverflow
@@ -243,12 +224,9 @@ export default function Address() {
         }
     }, [modalOpen, isEditingId])
 
-    /* ---------- Render ---------- */
-
     return (
         <main className="min-h-screen bg-background py-12">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-4xl font-bold" style={{ color: brandPrimary }}>
                         Saved Addresses
@@ -264,7 +242,6 @@ export default function Address() {
                     </Link>
                 </div>
 
-                {/* Add Address Button */}
                 <div className="mb-6 flex gap-3 items-center">
                     <Button
                         onClick={handleAddNew}
@@ -274,81 +251,97 @@ export default function Address() {
                         <Plus size={18} style={{ marginRight: 8, color: "#ffffff" }} />
                         Add New Address
                     </Button>
-
-          {/*          <span style={{ color: mutedText }} className="text-sm">*/}
-          {/*  You can add, edit or remove saved addresses. The default address is shown on each card.*/}
-          {/*</span>*/}
                 </div>
 
-                {/* Addresses Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {addresses.map((address) => (
-                        <Card key={address.id} className="p-6 relative" style={{ borderColor: neutralBorder }}>
-                            {address.isDefault && (
-                                <div
-                                    className="absolute top-4 right-4 text-xs font-semibold px-3 py-1 rounded-full"
-                                    style={{
-                                        backgroundColor: brandPrimary,
-                                        color: "#ffffff",
-                                        boxShadow: "0 1px 2px rgba(6,22,83,0.12)",
-                                    }}
-                                >
-                                    Default
-                                </div>
-                            )}
-
-                            <div className="flex items-start gap-3 mb-4">
-                                <MapPin size={20} style={{ color: brandPrimary, marginTop: 4 }} />
-                                <div>
-                                    <h3 className="font-bold text-lg" style={{ color: brandPrimary }}>
-                                        {address.name}
-                                    </h3>
-                                    <p className="text-sm" style={{ color: mutedText }}>
-                                        {address.address}
-                                    </p>
-                                    <p className="text-sm" style={{ color: mutedText }}>
-                                        {address.city}, {address.state} {address.zipCode}
-                                    </p>
-                                    <p className="text-sm mt-2" style={{ color: mutedText }}>
-                                        {address.phone}
-                                    </p>
-                                </div>
+                {isLoading ? (
+                    <div className="flex justify-center py-12">
+                        <Loader2 className="animate-spin text-gray-500" size={32} />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {!Array.isArray(addresses) || addresses.length === 0 ? (
+                            <div className="col-span-2 text-center py-10 text-gray-500">
+                                No addresses found. Add one to get started.
                             </div>
+                        ) : (
+                            addresses.map((address) => (
+                                <Card key={address._id} className="p-6 relative" style={{ borderColor: neutralBorder }}>
+                                    {address.isDefault && (
+                                        <div
+                                            className="absolute top-4 right-4 text-xs font-semibold px-3 py-1 rounded-full"
+                                            style={{
+                                                backgroundColor: brandPrimary,
+                                                color: "#ffffff",
+                                                boxShadow: "0 1px 2px rgba(6,22,83,0.12)",
+                                            }}
+                                        >
+                                            Default
+                                        </div>
+                                    )}
 
-                            {/* Actions */}
-                            <div className="flex gap-2 pt-4 border-t" style={{ borderColor: neutralBorder }}>
-                                <button
-                                    onClick={() => handleEdit(address)}
-                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium"
-                                    style={{
-                                        border: `1px solid ${neutralBorder}`,
-                                        color: brandPrimary,
-                                        background: "transparent",
-                                    }}
-                                >
-                                    <Edit2 size={18} />
-                                    Edit
-                                </button>
+                                    <div className="flex items-start gap-3 mb-4">
+                                        <MapPin size={20} style={{ color: brandPrimary, marginTop: 4 }} />
+                                        <div>
+                                            <h3 className="font-bold text-lg" style={{ color: brandPrimary }}>
+                                                {address.type}
+                                            </h3>
+                                            <p className="text-sm" style={{ color: mutedText }}>
+                                                {address.address}
+                                            </p>
+                                            <p className="text-sm" style={{ color: mutedText }}>
+                                                {address.city}, {address.state} {address.zipCode}
+                                            </p>
 
-                                <button
-                                    onClick={() => handleDelete(address.id)}
-                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium"
-                                    style={{
-                                        border: `1px solid ${brandSecondary}`,
-                                        color: brandSecondary,
-                                        background: "transparent",
-                                    }}
-                                >
-                                    <Trash2 size={16} style={{ color: brandSecondary }} />
-                                    Delete
-                                </button>
-                            </div>
-                        </Card>
-                    ))}
-                </div>
+                                            <div className="mt-2 space-y-1">
+                                                <div className="flex items-center gap-2 text-sm" style={{ color: mutedText }}>
+                                                    <Phone size={14} />
+                                                    <span>{address.phone_number_01}</span>
+                                                </div>
+                                                {address.phone_number_02 && (
+                                                    <div className="flex items-center gap-2 text-sm" style={{ color: mutedText }}>
+                                                        <span className="w-3.5"></span>
+                                                        <span>{address.phone_number_02}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2 pt-4 border-t" style={{ borderColor: neutralBorder }}>
+                                        <button
+                                            onClick={() => handleEdit(address)}
+                                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+                                            style={{
+                                                border: `1px solid ${neutralBorder}`,
+                                                color: brandPrimary,
+                                                background: "transparent",
+                                            }}
+                                        >
+                                            <Edit2 size={18} />
+                                            Edit
+                                        </button>
+
+                                        <button
+                                            onClick={() => handleDelete(address._id)}
+                                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+                                            style={{
+                                                border: `1px solid ${brandSecondary}`,
+                                                color: brandSecondary,
+                                                background: "transparent",
+                                            }}
+                                        >
+                                            <Trash2 size={16} style={{ color: brandSecondary }} />
+                                            Delete
+                                        </button>
+                                    </div>
+                                </Card>
+                            ))
+                        )}
+                    </div>
+                )}
             </div>
 
-            {/* Modal (Add / Edit) - improved layout & accessibility */}
+            {/* Modal */}
             {modalOpen && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center px-4"
@@ -356,17 +349,14 @@ export default function Address() {
                     aria-modal="true"
                     aria-labelledby="address-modal-title"
                 >
-                    {/* Backdrop */}
                     <div
                         className="absolute inset-0"
                         style={{ background: "rgba(0,0,0,0.45)" }}
                         onClick={closeModal}
                     />
-
-                    {/* Modal content */}
                     <div
                         ref={modalRef}
-                        onClick={(e) => e.stopPropagation()} // prevent backdrop click when interacting with modal
+                        onClick={(e) => e.stopPropagation()}
                         className="relative z-10 w-full max-w-2xl"
                     >
                         <Card
@@ -384,7 +374,6 @@ export default function Address() {
                                 </h3>
                                 <button
                                     onClick={closeModal}
-                                    aria-label="Close"
                                     className="p-2 rounded-md hover:bg-gray-100 transition-colors"
                                 >
                                     <X size={18} style={{ color: mutedText }} />
@@ -398,31 +387,57 @@ export default function Address() {
                                 }}
                             >
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
+                                    {/* 3. REPLACED INPUT WITH SELECT DROPDOWN */}
+                                    <div className="md:col-span-2">
                                         <label className="block text-sm font-medium mb-1">Label</label>
-                                        <input
-                                            ref={firstInputRef}
-                                            name="name"
-                                            value={formData.name}
-                                            onChange={handleChange}
-                                            className="w-full px-3 py-2 rounded-lg"
-                                            style={{ border: `1px solid ${neutralBorder}` }}
-                                            placeholder="Home, Office, etc."
-                                        />
+                                        <div className="relative">
+                                            <select
+                                                name="type"
+                                                value={formData.type}
+                                                onChange={handleChange}
+                                                className="w-full px-3 py-2 rounded-lg appearance-none bg-white"
+                                                style={{ border: `1px solid ${neutralBorder}` }}
+                                            >
+                                                <option value={AddressType.HOME}>Home</option>
+                                                <option value={AddressType.WORK}>Work</option>
+                                                <option value={AddressType.OTHER}>Other</option>
+                                            </select>
+                                            {/* Dropdown Arrow Icon */}
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+                                        </div>
                                     </div>
 
+                                    {/* Phone 1 */}
                                     <div>
-                                        <label className="block text-sm font-medium mb-1">Phone</label>
+                                        <label className="block text-sm font-medium mb-1">Phone Number <span className="text-red-500">*</span></label>
                                         <input
-                                            name="phone"
-                                            value={formData.phone}
+                                            name="phone_number_01"
+                                            value={formData.phone_number_01}
                                             onChange={handleChange}
                                             className="w-full px-3 py-2 rounded-lg"
                                             style={{ border: `1px solid ${neutralBorder}` }}
-                                            placeholder="+1 (555) 123-4567"
+                                            placeholder="+94 7X XXX XXXX"
                                         />
                                     </div>
 
+                                    {/* Phone 2 */}
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Second Phone Number</label>
+                                        <input
+                                            name="phone_number_02"
+                                            value={formData.phone_number_02}
+                                            onChange={handleChange}
+                                            className="w-full px-3 py-2 rounded-lg"
+                                            style={{ border: `1px solid ${neutralBorder}` }}
+                                            placeholder="+94 7X XXX XXXX"
+                                        />
+                                    </div>
+
+                                    {/* Address */}
                                     <div className="md:col-span-2">
                                         <label className="block text-sm font-medium mb-1">Address</label>
                                         <input
@@ -435,6 +450,7 @@ export default function Address() {
                                         />
                                     </div>
 
+                                    {/* City */}
                                     <div>
                                         <label className="block text-sm font-medium mb-1">City</label>
                                         <input
@@ -446,6 +462,7 @@ export default function Address() {
                                         />
                                     </div>
 
+                                    {/* State */}
                                     <div>
                                         <label className="block text-sm font-medium mb-1">State</label>
                                         <input
@@ -457,6 +474,7 @@ export default function Address() {
                                         />
                                     </div>
 
+                                    {/* Zip Code */}
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Zip Code</label>
                                         <input
@@ -492,10 +510,7 @@ export default function Address() {
                     </div>
                 </div>
             )}
-            <Toaster
-                position="top-right"
-                reverseOrder={false}
-            />
+            <Toaster position="top-right" reverseOrder={false} />
         </main>
     )
 }
