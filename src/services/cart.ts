@@ -12,17 +12,16 @@ export interface ICartItem {
     price: number;
 }
 
-// interface CartResponse {
-//     _id: string;
-//     user: string;
-//     items: ICartItem[];
-//     totalAmount: number;
-// }
-
+// 1. Define the full response shape (Uncommented and cleaned up)
+export interface CartResponse {
+    _id: string;
+    items: ICartItem[];
+    totalAmount: number;
+}
 
 export const addItemToCartAPI = async (productId: string, quantity: number) => {
     try {
-        const token = localStorage.getItem("token"); // Assuming you store JWT here
+        const token = localStorage.getItem("token");
 
         const response = await api.post(
             `/cart/add`,
@@ -38,10 +37,19 @@ export const addItemToCartAPI = async (productId: string, quantity: number) => {
 };
 
 export const getCart = async (): Promise<ICartItem[]> => {
-    const response = await api.get<{ items: ICartItem[] }>("/cart/", {
+    // Updated to use CartResponse
+    const response = await api.get<CartResponse>("/cart/", {
         withCredentials: true,
     });
     return response.data.items || [];
+};
+
+// 2. FIX: Use CartResponse here so TypeScript knows 'totalAmount' exists
+export const getTotalAmount = async (): Promise<number> => {
+    const response = await api.get<CartResponse>("/cart/", {
+        withCredentials: true,
+    });
+    return response.data.totalAmount || 0;
 };
 
 export const updateCartItem = async (itemId: string, quantity: number) => {
@@ -60,6 +68,7 @@ export const removeCartItem = async (itemId: string) => {
 
 const CartService = {
     getCart,
+    getTotalAmount, // Fixed typo here (was getTotolAmount)
     updateCartItem,
     removeCartItem
 };
