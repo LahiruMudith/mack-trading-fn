@@ -75,10 +75,8 @@ export default function AccountPage() {
                 alert(user)
 
                 if (user?.code === 200 && user.data) {
-                    localStorage.setItem('accessToken', user.accessToken);
-                    localStorage.setItem('refreshToken', user.refreshToken);
+                    console.log(user)
 
-                    alert("User validated successfully");
                     dispatch(login(userEmail));
                     const addressResponse: any = await getAllUserAddresses();
                     const addressList = addressResponse?.data || [];
@@ -106,13 +104,11 @@ export default function AccountPage() {
                     setUserData(mappedData);
                     setFormData(mappedData);
                 } else {
-                    alert("User validation failed");
                     dispatch(logout());
                     await persistor.purge();
                     navigate("/login", { replace: true });
                 }
             } catch (error) {
-                alert("User validation failed");
                 console.error("Validation Error:", error);
                 navigate("/login", { replace: true });
             }

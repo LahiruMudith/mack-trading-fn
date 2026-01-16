@@ -11,7 +11,8 @@ const PUBLIC_ENDPOINTS = ["/user/register", "/user/login", "/user/refreshToken"]
 
 
 api.interceptors.request.use((config) => {
-    const token = Cookies.get("accessToken");
+    // const token = Cookies.get("accessToken");
+    const token = localStorage.getItem('accessToken');
 
     const isPublic = PUBLIC_ENDPOINTS.some((url) => config.url?.includes(url))
 

@@ -82,6 +82,8 @@ export default function LoginPage() {
                 }
 
                 dispatch(login(formData.email));
+                localStorage.setItem('accessToken', response.accessToken);
+                localStorage.setItem('refreshToken', response.refreshToken);
                 return response;
             };
 
