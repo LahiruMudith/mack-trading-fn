@@ -220,7 +220,7 @@ export default function AccountPage() {
                         await persistor.purge();
 
                         // 3. Navigate
-                        navigate("/login", { replace: true });
+                        navigate("https://mack-trading-be.vercel.app/mack-trading/api/v1/login", { replace: true });
                     }} style={{
                         padding: "8px 12px",
                         borderRadius: 8,
