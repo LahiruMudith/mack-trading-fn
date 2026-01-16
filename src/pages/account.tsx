@@ -103,11 +103,11 @@ export default function AccountPage() {
                 } else {
                     dispatch(logout());
                     await persistor.purge();
-                    navigate("/login", { replace: true });
+                    navigate("https://mack-trading-be.vercel.app/mack-trading/api/v1/login", { replace: true });
                 }
             } catch (error) {
                 console.error("Validation Error:", error);
-                navigate("/login", { replace: true });
+                navigate("https://mack-trading-be.vercel.app/mack-trading/api/v1/login", { replace: true });
             }
         };
 
