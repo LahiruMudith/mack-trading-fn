@@ -103,11 +103,11 @@ export default function AccountPage() {
                 } else {
                     dispatch(logout());
                     await persistor.purge();
-                    navigate("https://mack-trading-be.vercel.app/mack-trading/api/v1/login", { replace: true });
+                    navigate("/login", { replace: true });
                 }
             } catch (error) {
                 console.error("Validation Error:", error);
-                navigate("https://mack-trading-be.vercel.app/mack-trading/api/v1/login", { replace: true });
+                navigate("/login", { replace: true });
             }
         };
 
@@ -220,7 +220,7 @@ export default function AccountPage() {
                         await persistor.purge();
 
                         // 3. Navigate
-                        navigate("https://mack-trading-be.vercel.app/mack-trading/api/v1/login", { replace: true });
+                        navigate("/login", { replace: true });
                     }} style={{
                         padding: "8px 12px",
                         borderRadius: 8,
@@ -236,7 +236,7 @@ export default function AccountPage() {
     }
 
     if (!isLoggedIn) {
-        return <Navigate to="https://mack-trading-be.vercel.app/mack-trading/api/v1/login" replace />
+        return <Navigate to="/login" replace />
     }
 
     const menuItems: MenuItem[] = [
