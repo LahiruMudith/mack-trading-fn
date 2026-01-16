@@ -72,8 +72,13 @@ export default function AccountPage() {
         const validateUser = async () => {
             try {
                 const user: any = await getUserData(userEmail as string);
+                alert(user)
 
                 if (user?.code === 200 && user.data) {
+                    localStorage.setItem('accessToken', user.accessToken);
+                    localStorage.setItem('refreshToken', user.refreshToken);
+
+                    alert("User validated successfully");
                     dispatch(login(userEmail));
                     const addressResponse: any = await getAllUserAddresses();
                     const addressList = addressResponse?.data || [];
@@ -101,11 +106,13 @@ export default function AccountPage() {
                     setUserData(mappedData);
                     setFormData(mappedData);
                 } else {
+                    alert("User validation failed");
                     dispatch(logout());
                     await persistor.purge();
                     navigate("/login", { replace: true });
                 }
             } catch (error) {
+                alert("User validation failed");
                 console.error("Validation Error:", error);
                 navigate("/login", { replace: true });
             }
