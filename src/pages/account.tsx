@@ -236,7 +236,7 @@ export default function AccountPage() {
     }
 
     if (!isLoggedIn) {
-        return <Navigate to="/login" replace />
+        return <Navigate to="https://mack-trading-be.vercel.app/mack-trading/api/v1/login" replace />
     }
 
     const menuItems: MenuItem[] = [
