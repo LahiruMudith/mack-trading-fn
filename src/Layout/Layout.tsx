@@ -1,6 +1,7 @@
 import Header from "../component/Header.tsx";
 import {Outlet} from "react-router-dom";
 import Footer from "../component/footer.tsx";
+import ChatBot from "../component/ui/chatBot.tsx";
 
 function Layout() {
     return (
@@ -9,6 +10,7 @@ function Layout() {
                 <Header/>
             </div>
             <main className="flex-grow">
+                <ChatBot />
                 <Outlet/>
             </main>
             <Footer/>

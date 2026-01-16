@@ -64,7 +64,6 @@ export default function Address() {
 
     // Refs
     const modalRef = useRef<HTMLDivElement | null>(null)
-    const firstInputRef = useRef<HTMLInputElement | null>(null) // Note: This ref might need to move to the Select element or Phone input since Label is now a Select
     const lastActiveElement = useRef<HTMLElement | null>(null)
 
     /* ---------- API Fetching ---------- */

@@ -100,7 +100,7 @@ export default function Product() {
         console.log(isLoggedIn)
         if (isLoggedIn) {
             try {
-                await addItemToCartAPI(product.id, quantity, product.image);
+                await addItemToCartAPI(product.id, quantity);
                 toast.success("Added to cart!");
             } catch (error) {
                 console.error("Cart sync error:", error);
@@ -191,8 +191,8 @@ export default function Product() {
                             <div className="mb-8">
                                 <h3 className="font-semibold text-lg mb-3 text-[#061653]">Key Features</h3>
                                 <ul className="space-y-2">
-                                    {Object.entries(product.specs).map(([key, value], index) => (
-                                        <li key={index} className="flex items-center gap-2">
+                                    {Object.entries(product.specs).map(([key, value]) => (
+                                        <li key={key} className="flex items-center gap-2">
                                             <span className="text-[#780000] font-bold">✓</span>
                                             <span className="capitalize">
                                                  {String(value)}

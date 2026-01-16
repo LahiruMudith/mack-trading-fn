@@ -41,10 +41,6 @@ export default function Header() {
                             title="Shopping Cart"
                         >
                             <ShoppingCart size={20}/>
-                            <span
-                                className="absolute top-1 right-1 w-4 h-4 bg-[#DF1C11] text-white text-xs rounded-full flex items-center justify-center">
-                                0
-                            </span>
                         </Link>
                         <Link
                             to="/account"

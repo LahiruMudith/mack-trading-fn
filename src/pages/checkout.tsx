@@ -496,7 +496,7 @@ export default function Checkout() {
                             {formData.phone2 && <p className="text-sm text-muted-foreground">Alt: {formData.phone2}</p>}
                         </div>
                         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                            <Link to="/account/orders"><Button className="w-full sm:w-auto min-w-[200px] cursor-pointer" style={{ backgroundColor: brandPrimary, color: "#ffffff" }}>View Order Details</Button></Link>
+                            <Link to="/orders"><Button className="w-full sm:w-auto min-w-[200px] cursor-pointer" style={{ backgroundColor: brandPrimary, color: "#ffffff" }}>View Order Details</Button></Link>
                             <Link to="/shop"><Button variant="outline" className="w-full sm:w-auto min-w-[200px] border-border hover:bg-muted bg-transparent cursor-pointer">Continue Shopping</Button></Link>
                         </div>
                     </Card>

@@ -15,7 +15,6 @@ const Cart = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    // --- 1. Fetch Cart Data (Refactored) ---
     const fetchCart = async () => {
         try {
             setLoading(true);
@@ -34,7 +33,6 @@ const Cart = () => {
         fetchCart();
     }, []);
 
-    // --- 2. Remove Item (Refactored) ---
     const removeItem = async (itemId: string) => {
         const previousItems = [...cartItems];
         // Optimistic Update
@@ -49,12 +47,10 @@ const Cart = () => {
         }
     };
 
-    // --- 3. Update Quantity (Refactored) ---
     const updateQuantity = async (itemId: string, newQuantity: number) => {
         if (newQuantity < 1) return removeItem(itemId);
 
         const previousItems = [...cartItems];
-        // Optimistic Update
         setCartItems(cartItems.map((item) =>
             (item._id === itemId ? { ...item, quantity: newQuantity } : item)
         ));
@@ -70,9 +66,9 @@ const Cart = () => {
 
     // --- Calculations ---
     const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-    const tax = subtotal * 0.1;
+    // const tax = subtotal * 0.1;
     const shipping = subtotal > 100 ? 0 : 15;
-    const total = subtotal + tax + shipping;
+    const total = subtotal + shipping;
 
     const scrollContainerClass =
         cartItems.length > 3 ? "max-h-[580px] sm:max-h-[430px] overflow-y-auto" : "";
@@ -172,7 +168,7 @@ const Cart = () => {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-sm sm:text-base text-muted-foreground">Tax</span>
-                                    <span className="font-semibold">${tax.toFixed(2)}</span>
+                                    <span className="font-semibold"><span className="text-xs text-green-600 ml-2">Free</span></span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-sm sm:text-base text-muted-foreground">Shipping {shipping === 0 && <span className="text-xs text-green-600 ml-2">(Free)</span>}</span>
