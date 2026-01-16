@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 import {getRefreshToken} from "./auth.ts";
 
 const api = axios.create({
-    baseURL: "http://localhost:5000/mack-trading/api/v1",
+    baseURL: "https://mack-trading-be.vercel.app/mack-trading/api/v1",
     withCredentials: true
 })
 
