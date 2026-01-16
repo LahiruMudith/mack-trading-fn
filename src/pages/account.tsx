@@ -72,7 +72,6 @@ export default function AccountPage() {
         const validateUser = async () => {
             try {
                 const user: any = await getUserData(userEmail as string);
-                alert(user)
 
                 if (user?.code === 200 && user.data) {
                     console.log(user)
