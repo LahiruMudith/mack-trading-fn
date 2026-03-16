@@ -11,8 +11,8 @@ export const register = async (data: userDataType) => {
     return response.data
 }
 
-export const google_login = async (data: userDataType) => {
-    const response = await api.post("/user/google-login" ,data, { withCredentials: true })
+export const google_login = async ({ idToken }: { idToken: string }) => {
+    const response = await api.post("/user/google-login" ,{ idToken }, { withCredentials: true })
     return response.data
 }
 

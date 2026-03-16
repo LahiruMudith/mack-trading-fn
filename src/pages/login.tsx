@@ -35,40 +35,35 @@ export default function LoginPage() {
             const result = await signInWithPopup(auth, googleProvider);
             const firebaseUser = result.user;
 
-            if (!firebaseUser.email) {
-                toast.error("No email found provided by Google");
-                return;
-            }
-
-            const userData = {
-                email: firebaseUser.email,
-                name: firebaseUser.displayName || "Unknown User",
-                password:"password",
-            };
+            // Get Firebase ID token (this proves identity to your backend)
+            const idToken = await firebaseUser.getIdToken();
 
             const toastId = toast.loading("Connecting to server...");
 
-            const response = await google_login(userData);
+            const response = await google_login({
+                idToken,
+            });
 
             if (response) {
                 const successMessage = response.isNewUser
-                    ? "Account created! Password sent to email."
+                    ? "Account created!"
                     : "Login Successful!";
 
                 toast.success(successMessage, { id: toastId });
 
-                dispatch(login(response.email));
+                // Prefer using backend returned identity (not firebase email)
+                dispatch(login(response.email ?? firebaseUser.email));
+
                 setTimeout(() => {
                     navigate("/account");
                 }, 1500);
             }
-
         } catch (error: any) {
             console.error("Login Error:", error);
             const errorMsg = error.response?.data?.message || "Google Login Failed";
             toast.error(errorMsg);
         }
-    }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
