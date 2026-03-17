@@ -72,6 +72,13 @@ export default function SignupPage() {
                 idToken, // or you can avoid body entirely and just set header (see below)
             });
 
+            if (response?.accessToken) {
+                localStorage.setItem("accessToken", response.accessToken);
+            }
+            if (response?.refreshToken) {
+                localStorage.setItem("refreshToken", response.refreshToken);
+            }
+
             if (response) {
                 const successMessage = response.isNewUser
                     ? "Account created!"
