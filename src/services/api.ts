@@ -7,7 +7,7 @@ const api = axios.create({
     withCredentials: true
 })
 
-const PUBLIC_ENDPOINTS = ["/user/register", "/user/login", "/user/refreshToken"] //
+const PUBLIC_ENDPOINTS = ["/user/register", "/user/login", "/user/refreshToken", "/user/google-login"] //
 
 
 api.interceptors.request.use((config) => {
